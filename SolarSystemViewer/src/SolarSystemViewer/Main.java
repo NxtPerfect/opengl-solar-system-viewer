@@ -13,6 +13,7 @@ import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
 import com.jogamp.opengl.glu.GLU;
+import com.jogamp.opengl.glu.GLUquadric;
 import com.jogamp.opengl.util.FPSAnimator;
 import com.jogamp.opengl.util.gl2.GLUT;
 
@@ -23,10 +24,16 @@ public class Main extends JFrame implements GLEventListener {
 	private GLU glu;
 	private GLUT glut;
 	private FPSAnimator animator;
+	Planet sun, earth, mercury;
 
 	// Constructor
 	public Main() {
 		super("Solar System Viewer");
+
+		sun = new Planet("Sun", 0, 0, 0, 20.0, 20, 0, 0, null);
+		mercury = new Planet("Mercury", 40, 0, 0, 10.0, 5, 0, 0.5, null);
+		earth = new Planet("Earth", 80, 0, 0, 10.0, 10, 0, 0.1, null);
+
 		GLProfile profile = GLProfile.get(GLProfile.GL2);
 		GLCapabilities capabilities = new GLCapabilities(profile);
 		canvas = new GLCanvas(capabilities);
@@ -37,7 +44,7 @@ public class Main extends JFrame implements GLEventListener {
 		setBounds(d.width / 4, d.height / 4, d.width / 2, d.height / 2);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setVisible(true);
-		animator = new FPSAnimator(canvas, 30);
+		animator = new FPSAnimator(canvas, 60);
 		animator.start();
 	}
 
@@ -58,21 +65,20 @@ public class Main extends JFrame implements GLEventListener {
 		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 
 		gl.glLoadIdentity();
-		gl.glTranslatef(0.0f, 0.0f, -10.0f);
+//		gl.glTranslatef(-2.5f, 2.5f, -100.0f);
 
 //		gl.glRotatef(kat, 1.0f, 0.0f, 0.0f);
 //		gl.glRotatef(kat, 0.0f, 1.0f, 0.0f);
 //		gl.glRotatef(kat, 0.0f, 0.0f, 1.0f);
-		float scale[] = { 1.0f, 2.0f, 1.0f };
+		float scale[] = { 1.0f, 1.0f, 1.0f };
 		gl.glScalef(scale[0], scale[1], scale[2]);
-		gl.glTranslatef(1.0f, -2.0f, 0.0f);
+		gl.glTranslatef(1.0f, 1.0f, -100.0f);
 
-//		drawCube(gl);
-		// Rotating animation
-//		kat += 1.0f;
-//		if (kat >= 360.0f) {
-//			kat -= 360.0f;
-//		}
+		for (Planet p : new Planet[] { sun, earth, mercury }) {
+			p.render(gl);
+			p.rotate();
+		}
+		earth.debug();
 
 		canvas.repaint();
 	}
@@ -93,6 +99,8 @@ public class Main extends JFrame implements GLEventListener {
 		float ambientlight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 		gl.glLightModelfv(GL2.GL_LIGHT_MODEL_AMBIENT, ambientlight, 0);
 
+		// TODO Disabled until i figure out how to seperate them
+		// for each planet
 		gl.glEnable(GL2.GL_COLOR_MATERIAL_FACE);
 		gl.glEnable(GL2.GL_EMISSION);
 		float matAmbient[] = { 0.1f, 0.2f, 0.1f, 1.0f };
@@ -103,19 +111,19 @@ public class Main extends JFrame implements GLEventListener {
 		gl.glMaterialfv(GL2.GL_FRONT_FACE, GL2.GL_EMISSION, emission, 0);
 		gl.glMaterialf(GL2.GL_FRONT_FACE, GL2.GL_SHININESS, 1);
 
-		gl.glEnable(GL2.GL_LIGHTING);
-		float ambient[] = { 0.6f, 0.1f, 0.1f, 1.0f };
-		float diffuse[] = { 0.2f, 0.0f, 0.2f, 1.0f };
-		float specular[] = { 0.8f, 0.0f, 0.0f, 1.0f };
-		float position[] = { -5.0f, 1.0f, 5.0f, 0.0f };
-
-		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_AMBIENT, ambient, 0);
-		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_DIFFUSE, diffuse, 0);
-		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_SPECULAR, specular, 0);
-		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION, position, 0);
-
-		gl.glEnable(GL2.GL_LIGHT0);
-
+//		gl.glEnable(GL2.GL_LIGHTING);
+//		float ambient[] = { 0.6f, 0.1f, 0.1f, 1.0f };
+//		float diffuse[] = { 0.2f, 0.0f, 0.2f, 1.0f };
+//		float specular[] = { 0.8f, 0.0f, 0.0f, 1.0f };
+//		float position[] = { -5.0f, 1.0f, 5.0f, 0.0f };
+//
+//		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_AMBIENT, ambient, 0);
+//		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_DIFFUSE, diffuse, 0);
+//		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_SPECULAR, specular, 0);
+//		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION, position, 0);
+//
+//		gl.glEnable(GL2.GL_LIGHT0);
+//
 		gl.glFlush();
 	}
 
@@ -131,23 +139,23 @@ public class Main extends JFrame implements GLEventListener {
 		gl.glLoadIdentity();
 		float aspectRatio = (float) width / height;
 		GLU glu = new GLU();
-		glu.gluPerspective(45.0, aspectRatio, 1.0, 100.0);
+		glu.gluPerspective(90.0, aspectRatio, 1.0, 100.0);
 
 		gl.glMatrixMode(GL2.GL_MODELVIEW);
 	}
 
-	private class Planet implements GLEventListener {
+	private class Planet {
 		private String name;
 		private int distanceFromSun;
 		private double x;
 		private double y;
 		private double speed;
 		private int radius;
-		private double rotation;
+		private float rotation;
 		private double rotationSpeed;
 		private Planet[] moons;
 
-		private Planet(String name, int distanceFromSun, double x, double y, double speed, int radius, double rotation,
+		private Planet(String name, int distanceFromSun, double x, double y, double speed, int radius, float rotation,
 				double rotationSpeed, Planet[] moons) {
 			this.name = name;
 			this.distanceFromSun = distanceFromSun;
@@ -157,50 +165,47 @@ public class Main extends JFrame implements GLEventListener {
 			this.radius = radius;
 			this.rotation = rotation;
 			this.moons = moons;
+			this.rotationSpeed = rotationSpeed;
 		}
 
 		// Rotates the planet
 		private void rotate() {
 			rotation += rotationSpeed;
+			if (rotation > 360.0f) {
+				rotation = 0.0f;
+			}
 		}
 
-		// Moves the planet to corresponding spot on the circle
-		private void move(double x, double y) {
-			this.x = x;
-			this.y = y;
+		// Calculate point on the orbit
+		// and move it
+		private void orbit() {
+			double radiansRotation = Math.toRadians(rotation);
+			this.x = Math.cos(radiansRotation) * distanceFromSun;
+			this.y = Math.sin(radiansRotation) * distanceFromSun;
 		}
 
-		// Calculate point on the orbit, as well as rotation
-		public void orbit() {
-			// calculate place on circle with origin at 0,0, and radius of distanceFromSun
-			x = Math.cos(rotation) * distanceFromSun;
-			y = Math.sin(rotation) * distanceFromSun;
-			move(x, y);
+		public void render(GL2 gl) {
+			gl.glPushMatrix();
+			gl.glTranslated(x, y, 0);
+			GLU glu = new GLU();
+			GLUquadric quad = glu.gluNewQuadric();
+
+			// Primitive color change, should use shaders instead
+			gl.glColor3f(1.0f, 1.0f, 1.0f);
+			if (this.name == "Sun") {
+				gl.glColor3f(1.0f, 1.0f, 0.0f);
+			}
+			if (this.name == "Mercury") {
+				gl.glColor3f(0.0f, 1.0f, 1.0f);
+			}
+			glu.gluSphere(quad, (double) this.radius, 25, 25);
 			rotate();
+			orbit();
 		}
 
-		@Override
-		public void display(GLAutoDrawable arg0) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public void dispose(GLAutoDrawable arg0) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public void init(GLAutoDrawable arg0) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public void reshape(GLAutoDrawable arg0, int arg1, int arg2, int arg3, int arg4) {
-			// TODO Auto-generated method stub
-			
+		public void debug() {
+			System.out.println(this.name + " rotation: " + this.rotation + " coordinates (x,y): (" + this.x + ","
+					+ this.y + ") distance from sun: " + this.distanceFromSun);
 		}
 	}
 }
