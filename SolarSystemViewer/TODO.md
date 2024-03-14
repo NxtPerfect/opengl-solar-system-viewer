@@ -8,3 +8,4 @@
 
 # Planet class
 - [/] orbit method, which should rotate the planet, and move it on the orbit
+- [ ] render sphere
