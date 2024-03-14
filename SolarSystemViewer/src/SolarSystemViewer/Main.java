@@ -24,15 +24,16 @@ public class Main extends JFrame implements GLEventListener {
 	private GLU glu;
 	private GLUT glut;
 	private FPSAnimator animator;
-	Planet sun, earth, mercury;
+	Planet sun, earth, mercury, venus;
 
 	// Constructor
 	public Main() {
 		super("Solar System Viewer");
 
 		sun = new Planet("Sun", 0, 0, 0, 20.0, 20, 0, 0, null);
-		mercury = new Planet("Mercury", 40, 0, 0, 10.0, 5, 0, 0.5, null);
-		earth = new Planet("Earth", 80, 0, 0, 10.0, 10, 0, 0.1, null);
+		mercury = new Planet("Mercury", 40, 0, 0, 10.0, 2, 45, 0.25, null);
+		venus = new Planet("Venus", 60, 0, 0, 10.0, 5, 90, 0.5, null);
+		earth = new Planet("Earth", 100, 0, 0, 10.0, 10, 135, 0.75, null);
 
 		GLProfile profile = GLProfile.get(GLProfile.GL2);
 		GLCapabilities capabilities = new GLCapabilities(profile);
@@ -65,20 +66,14 @@ public class Main extends JFrame implements GLEventListener {
 		gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 
 		gl.glLoadIdentity();
-//		gl.glTranslatef(-2.5f, 2.5f, -100.0f);
-
-//		gl.glRotatef(kat, 1.0f, 0.0f, 0.0f);
-//		gl.glRotatef(kat, 0.0f, 1.0f, 0.0f);
-//		gl.glRotatef(kat, 0.0f, 0.0f, 1.0f);
 		float scale[] = { 1.0f, 1.0f, 1.0f };
 		gl.glScalef(scale[0], scale[1], scale[2]);
-		gl.glTranslatef(1.0f, 1.0f, -100.0f);
+//		gl.glTranslatef(1.0f, 1.0f, -100.0f);
 
-		for (Planet p : new Planet[] { sun, earth, mercury }) {
+		for (Planet p : new Planet[] { sun, mercury, venus, earth }) {
 			p.render(gl);
-			p.rotate();
 		}
-		earth.debug();
+		venus.debug();
 
 		canvas.repaint();
 	}
@@ -139,7 +134,8 @@ public class Main extends JFrame implements GLEventListener {
 		gl.glLoadIdentity();
 		float aspectRatio = (float) width / height;
 		GLU glu = new GLU();
-		glu.gluPerspective(90.0, aspectRatio, 1.0, 100.0);
+		glu.gluPerspective(45.0, aspectRatio, 1.0, 500.0);
+		gl.glTranslatef(1.0f, 1.0f, -300.0f);
 
 		gl.glMatrixMode(GL2.GL_MODELVIEW);
 	}
@@ -199,8 +195,11 @@ public class Main extends JFrame implements GLEventListener {
 				gl.glColor3f(0.0f, 1.0f, 1.0f);
 			}
 			glu.gluSphere(quad, (double) this.radius, 25, 25);
+			
+			glu.gluDeleteQuadric(quad);
 			rotate();
 			orbit();
+			gl.glPopMatrix();
 		}
 
 		public void debug() {
