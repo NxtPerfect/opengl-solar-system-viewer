@@ -133,8 +133,8 @@ public class Main extends JFrame implements GLEventListener {
 
 		// Create shader program
 		shaderProgram = gl.glCreateProgram();
-		gl.glAttachShader(shaderProgram, vertexShader);
-		gl.glAttachShader(shaderProgram, fragmentShader);
+//		gl.glAttachShader(shaderProgram, vertexShader);
+//		gl.glAttachShader(shaderProgram, fragmentShader);
 
 		// Link program
 		gl.glLinkProgram(shaderProgram);

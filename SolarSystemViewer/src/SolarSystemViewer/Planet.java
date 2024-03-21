@@ -90,8 +90,8 @@ public class Planet {
 	}
 
 	public void render(GL2 gl, int shaderProgram) {
-		gl.glUseProgram(shaderProgram);
 		gl.glPushMatrix();
+		gl.glUseProgram(shaderProgram);
 		gl.glTranslated(x, y, 0);
 		GLU glu = new GLU();
 //		GLUquadric quad = glu.gluNewQuadric();
@@ -100,7 +100,7 @@ public class Planet {
 		// by using gluSphere i couldn't use shaders
 //		glu.gluSphere(quad, (double) this.radius, 25, 25);
 		gl.glPushMatrix();
-		this.Draw(gl, 0.1f, 10, 10);
+		this.Draw(gl, radius, 10, 10);
 		gl.glPopMatrix();
 
 		// TODO: here i should add render of moons
@@ -113,8 +113,8 @@ public class Planet {
 //		glu.gluDeleteQuadric(quad);
 		rotate();
 		orbit();
-		gl.glPopMatrix();
 		gl.glUseProgram(0);
+		gl.glPopMatrix();
 	}
 
 	public void debug() {
