@@ -1,5 +1,9 @@
 package SolarSystemViewer;
 
+import com.jogamp.opengl.GL2;
+import com.jogamp.opengl.glu.GLU;
+import com.jogamp.opengl.glu.GLUquadric;
+
 public class Planet {
 	private String name;
 	private int distanceFromSun;
@@ -7,11 +11,11 @@ public class Planet {
 	private double y;
 	private double speed;
 	private int radius;
-	private double rotation;
+	private float rotation;
 	private double rotationSpeed;
 	private Planet[] moons;
 
-	private Planet(String name, int distanceFromSun, double x, double y, double speed, int radius, double rotation,
+	Planet(String name, int distanceFromSun, double x, double y, double speed, int radius, float rotation,
 			double rotationSpeed, Planet[] moons) {
 		this.name = name;
 		this.distanceFromSun = distanceFromSun;
@@ -21,25 +25,100 @@ public class Planet {
 		this.radius = radius;
 		this.rotation = rotation;
 		this.moons = moons;
+		this.rotationSpeed = rotationSpeed;
 	}
-	
+
 	// Rotates the planet
 	private void rotate() {
 		rotation += rotationSpeed;
+		if (rotation > 360.0f) {
+			rotation = 0.0f;
+		}
 	}
 
-	// Moves the planet to corresponding spot on the circle
-	private void move(double x, double y) {
-		this.x = x;
-		this.y = y;
+	// Calculate point on the orbit
+	// and move it
+	private void orbit() {
+		double radiansRotation = Math.toRadians(rotation);
+		this.x = Math.cos(radiansRotation) * distanceFromSun;
+		this.y = Math.sin(radiansRotation) * distanceFromSun;
 	}
 
-	// Calculate point on the orbit, as well as rotation
-	public void orbit() {
-		// calculate place on circle with origin at 0,0, and radius of distanceFromSun
-		x = Math.cos(rotation) * distanceFromSun;
-		y = Math.sin(rotation) * distanceFromSun;
-		move(x, y);
+	private void Draw(GL2 gl, double r, int n, int m) {
+		double alpha, beta;
+		int i, j;
+
+		for (beta = 180.0 / m, i = 0; beta <= 180.0; beta += 180.0 / m, i++)
+			for (alpha = 0.0, j = 0; alpha < 360.0; alpha += 360.0 / n, j++) {
+				gl.glPushAttrib(GL2.GL_CURRENT_BIT);
+				if ((i + j) % 2 == 0)
+					gl.glColor3f(0.0f, 0.0f, 0.0f);
+				gl.glBegin(GL2.GL_QUADS);
+
+				gl.glNormal3d(Math.sin(Math.PI * (beta - 180.0 / m) / 180.0) * Math.cos(Math.PI * alpha / 180.0),
+						Math.cos(Math.PI * (beta - 180.0 / m) / 180.0),
+						Math.sin(Math.PI * (beta - 180.0 / m) / 180.0) * Math.sin(Math.PI * alpha / 180.0));
+				gl.glVertex3d(r * Math.sin(Math.PI * (beta - 180.0 / m) / 180.0) * Math.cos(Math.PI * alpha / 180.0),
+						r * Math.cos(Math.PI * (beta - 180.0 / m) / 180.0),
+						r * Math.sin(Math.PI * (beta - 180.0 / m) / 180.0) * Math.sin(Math.PI * alpha / 180.0));
+				gl.glNormal3d(Math.sin(Math.PI * beta / 180.0) * Math.cos(Math.PI * alpha / 180.0),
+						Math.cos(Math.PI * beta / 180.0),
+						Math.sin(Math.PI * beta / 180.0) * Math.sin(Math.PI * alpha / 180.0));
+				gl.glVertex3d(r * Math.sin(Math.PI * beta / 180.0) * Math.cos(Math.PI * alpha / 180.0),
+						r * Math.cos(Math.PI * beta / 180.0),
+						r * Math.sin(Math.PI * beta / 180.0) * Math.sin(Math.PI * alpha / 180.0));
+				gl.glNormal3d(Math.sin(Math.PI * beta / 180.0) * Math.cos(Math.PI * (alpha - 360.0 / n) / 180.0),
+						Math.cos(Math.PI * beta / 180.0),
+						Math.sin(Math.PI * beta / 180.0) * Math.sin(Math.PI * (alpha - 360.0 / n) / 180.0));
+				gl.glVertex3d(r * Math.sin(Math.PI * beta / 180.0) * Math.cos(Math.PI * (alpha - 360.0 / n) / 180.0),
+						r * Math.cos(Math.PI * beta / 180.0),
+						r * Math.sin(Math.PI * beta / 180.0) * Math.sin(Math.PI * (alpha - 360.0 / n) / 180.0));
+				gl.glNormal3d(
+						Math.sin(Math.PI * (beta - 180.0 / m) / 180.0)
+								* Math.cos(Math.PI * (alpha - 360.0 / n) / 180.0),
+						Math.cos(Math.PI * (beta - 180.0 / m) / 180.0), Math.sin(Math.PI * (beta - 180.0 / m) / 180.0)
+								* Math.sin(Math.PI * (alpha - 360.0 / n) / 180.0));
+				gl.glVertex3d(
+						r * Math.sin(Math.PI * (beta - 180.0 / m) / 180.0)
+								* Math.cos(Math.PI * (alpha - 360.0 / n) / 180.0),
+						r * Math.cos(Math.PI * (beta - 180.0 / m) / 180.0),
+						r * Math.sin(Math.PI * (beta - 180.0 / m) / 180.0)
+								* Math.sin(Math.PI * (alpha - 360.0 / n) / 180.0));
+				gl.glEnd();
+				gl.glPopAttrib();
+			}
+	}
+
+	public void render(GL2 gl, int shaderProgram) {
+		gl.glUseProgram(shaderProgram);
+		gl.glPushMatrix();
+		gl.glTranslated(x, y, 0);
+		GLU glu = new GLU();
+//		GLUquadric quad = glu.gluNewQuadric();
+
+		// this was the issue
+		// by using gluSphere i couldn't use shaders
+//		glu.gluSphere(quad, (double) this.radius, 25, 25);
+		gl.glPushMatrix();
+		this.Draw(gl, 0.1f, 10, 10);
+		gl.glPopMatrix();
+
+		// TODO: here i should add render of moons
+		if (this.moons != null) {
+			for (Planet moon : this.moons) {
+				moon.render(gl, shaderProgram);
+			}
+		}
+
+//		glu.gluDeleteQuadric(quad);
 		rotate();
+		orbit();
+		gl.glPopMatrix();
+		gl.glUseProgram(0);
+	}
+
+	public void debug() {
+		System.out.println(this.name + " rotation: " + this.rotation + " coordinates (x,y): (" + this.x + "," + this.y
+				+ ") distance from sun: " + this.distanceFromSun);
 	}
 }

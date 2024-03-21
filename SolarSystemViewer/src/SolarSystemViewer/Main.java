@@ -28,16 +28,18 @@ public class Main extends JFrame implements GLEventListener {
 	private GLUT glut;
 	private FPSAnimator animator;
 	private int shaderProgram;
-	Planet sun, earth, mercury, venus;
+	private int MAX_FPS = 30;
+	private Planet[] planets = new Planet[5];
 
 	// Constructor
 	public Main() {
 		super("Solar System Viewer");
 
-		sun = new Planet("Sun", 0, 0, 0, 20.0, 20, 0, 0, null);
-		mercury = new Planet("Mercury", 40, 0, 0, 10.0, 2, 45, 0.25, null);
-		venus = new Planet("Venus", 60, 0, 0, 10.0, 5, 90, 0.5, null);
-		earth = new Planet("Earth", 100, 0, 0, 10.0, 10, 135, 0.75, null);
+		planets[0] = new Planet("Sun", 0, 0, 0, 20.0, 20, 0, 0, null);
+		planets[1] = new Planet("Mercury", 40, 0, 0, 10.0, 2, 45, 0.25, null);
+		planets[2] = new Planet("Venus", 60, 0, 0, 10.0, 5, 10, 0.5, null);
+		planets[3] = new Planet("Earth", 100, 0, 0, 10.0, 12, 135, 0.75, null);
+		planets[4] = new Planet("Mars", 140, 0, 0, 10.0, 2, 180, 0.75, null);
 
 		GLProfile profile = GLProfile.get(GLProfile.GL2);
 		GLCapabilities capabilities = new GLCapabilities(profile);
@@ -47,9 +49,11 @@ public class Main extends JFrame implements GLEventListener {
 		Toolkit kit = Toolkit.getDefaultToolkit();
 		Dimension d = kit.getScreenSize();
 		setBounds(d.width / 4, d.height / 4, d.width / 2, d.height / 2);
+		setMinimumSize(new Dimension(d.width/4, d.height/4));
+		setMaximumSize(new Dimension(d.width, d.height));
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setVisible(true);
-		animator = new FPSAnimator(canvas, 60);
+		animator = new FPSAnimator(canvas, MAX_FPS);
 		animator.start();
 	}
 
@@ -72,12 +76,10 @@ public class Main extends JFrame implements GLEventListener {
 		gl.glLoadIdentity();
 		float scale[] = { 1.0f, 1.0f, 1.0f };
 		gl.glScalef(scale[0], scale[1], scale[2]);
-//		gl.glTranslatef(1.0f, 1.0f, -100.0f);
 
-		for (Planet p : new Planet[] { sun, mercury, venus, earth }) {
-			p.render(gl);
+		for (Planet p : planets) {
+			p.render(gl, shaderProgram);
 		}
-//		venus.debug();
 
 		canvas.repaint();
 	}
@@ -111,19 +113,18 @@ public class Main extends JFrame implements GLEventListener {
 		gl.glMaterialfv(GL2.GL_FRONT_FACE, GL2.GL_EMISSION, emission, 0);
 		gl.glMaterialf(GL2.GL_FRONT_FACE, GL2.GL_SHININESS, 1);
 
-//		gl.glEnable(GL2.GL_LIGHTING);
-//		float ambient[] = { 0.6f, 0.1f, 0.1f, 1.0f };
-//		float diffuse[] = { 0.2f, 0.0f, 0.2f, 1.0f };
-//		float specular[] = { 0.8f, 0.0f, 0.0f, 1.0f };
-//		float position[] = { -5.0f, 1.0f, 5.0f, 0.0f };
-//
-//		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_AMBIENT, ambient, 0);
-//		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_DIFFUSE, diffuse, 0);
-//		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_SPECULAR, specular, 0);
-//		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION, position, 0);
-//
-//		gl.glEnable(GL2.GL_LIGHT0);
-//
+		gl.glEnable(GL2.GL_LIGHTING);
+		float ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+		float diffuse[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+		float specular[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		float position[] = { -5.0f, 1.0f, 5.0f, 0.0f };
+
+		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_AMBIENT, ambient, 0);
+		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_DIFFUSE, diffuse, 0);
+		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_SPECULAR, specular, 0);
+		gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION, position, 0);
+
+		gl.glEnable(GL2.GL_LIGHT0);
 
 		// Load and compile vertex shader
 		int vertexShader = compileShader(gl, GL2.GL_VERTEX_SHADER, "src/SolarSystemViewer/planet.vert");
@@ -134,11 +135,22 @@ public class Main extends JFrame implements GLEventListener {
 		shaderProgram = gl.glCreateProgram();
 		gl.glAttachShader(shaderProgram, vertexShader);
 		gl.glAttachShader(shaderProgram, fragmentShader);
+
+		// Link program
 		gl.glLinkProgram(shaderProgram);
+		int[] linked = new int[1];
+		gl.glGetProgramiv(shaderProgram, GL2.GL_LINK_STATUS, linked, 0);
+		if (linked[0] == 0) {
+			int[] logLength = new int[1];
+			gl.glGetProgramiv(shaderProgram, GL2.GL_INFO_LOG_LENGTH, logLength, 0);
+			byte[] log = new byte[logLength[0]];
+			gl.glGetProgramInfoLog(shaderProgram, logLength[0], (int[]) null, 0, log, 0);
+			System.err.println("Error linking shader program: " + new String(log));
+		}
 
 		// Cleanup individual shaders
-//		gl.glDeleteShader(vertexShader);
-//		gl.glDeleteShader(fragmentShader);
+		gl.glDeleteShader(vertexShader);
+		gl.glDeleteShader(fragmentShader);
 		gl.glFlush();
 	}
 
@@ -170,100 +182,21 @@ public class Main extends JFrame implements GLEventListener {
 			}
 			br.close();
 			gl.glShaderSource(shader, 1, new String[] { shaderSource.toString() }, null);
+			// Compile shader
 			gl.glCompileShader(shader);
+			int[] compiled = new int[1];
+			gl.glGetShaderiv(shader, GL2.GL_COMPILE_STATUS, compiled, 0);
+			if (compiled[0] == 0) {
+				int[] logLength = new int[1];
+				gl.glGetShaderiv(shader, GL2.GL_INFO_LOG_LENGTH, logLength, 0);
+				byte[] log = new byte[logLength[0]];
+				gl.glGetShaderInfoLog(shader, logLength[0], (int[]) null, 0, log, 0);
+				System.err.println("Error compiling shader: " + new String(log));
+			}
 			return shader;
 		} catch (IOException e) {
 			e.printStackTrace();
 			return 0;
-		}
-	}
-
-	private class Planet {
-		private String name;
-		private int distanceFromSun;
-		private double x;
-		private double y;
-		private double speed;
-		private int radius;
-		private float rotation;
-		private double rotationSpeed;
-		private Planet[] moons;
-
-		private Planet(String name, int distanceFromSun, double x, double y, double speed, int radius, float rotation,
-				double rotationSpeed, Planet[] moons) {
-			this.name = name;
-			this.distanceFromSun = distanceFromSun;
-			this.x = x;
-			this.y = y;
-			this.speed = speed;
-			this.radius = radius;
-			this.rotation = rotation;
-			this.moons = moons;
-			this.rotationSpeed = rotationSpeed;
-		}
-
-		// Rotates the planet
-		private void rotate() {
-			rotation += rotationSpeed;
-			if (rotation > 360.0f) {
-				rotation = 0.0f;
-			}
-		}
-
-		// Calculate point on the orbit
-		// and move it
-		private void orbit() {
-			double radiansRotation = Math.toRadians(rotation);
-			this.x = Math.cos(radiansRotation) * distanceFromSun;
-			this.y = Math.sin(radiansRotation) * distanceFromSun;
-		}
-
-		private int compileShader(GL2 gl, int type, String filename) {
-			int shader = gl.glCreateShader(type);
-			try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-				StringBuilder shaderSource = new StringBuilder();
-				String line;
-				while ((line = br.readLine()) != null) {
-					shaderSource.append(line).append("\n");
-				}
-				gl.glShaderSource(shader, 1, new String[] { shaderSource.toString() }, null);
-				gl.glCompileShader(shader);
-				return shader;
-			} catch (IOException e) {
-				e.printStackTrace();
-				return 0;
-			}
-		}
-
-		public void render(GL2 gl) {
-			gl.glPushMatrix();
-			gl.glTranslated(x, y, 0);
-			GLU glu = new GLU();
-			GLUquadric quad = glu.gluNewQuadric();
-
-			// Primitive color change, should use shaders instead
-			gl.glColor3f(1.0f, 1.0f, 1.0f);
-			if (this.name == "Sun") {
-				gl.glColor3f(1.0f, 1.0f, 0.0f);
-			}
-			if (this.name == "Mercury") {
-				gl.glColor3f(0.0f, 1.0f, 1.0f);
-			}
-			gl.glUseProgram(shaderProgram);
-			glu.gluSphere(quad, (double) this.radius, 25, 25);
-
-			// TODO: here i should add render of moons
-
-			glu.gluDeleteQuadric(quad);
-			rotate();
-			orbit();
-			gl.glUseProgram(0);
-			gl.glPopMatrix();
-		}
-
-		public void debug() {
-			System.out.println(this.name + " rotation: " + this.rotation + " coordinates (x,y): (" + this.x + ","
-					+ this.y + ") distance from sun: " + this.distanceFromSun);
 		}
 	}
 }

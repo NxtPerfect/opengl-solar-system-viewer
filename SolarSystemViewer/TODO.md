@@ -5,20 +5,18 @@
 - [ ] Zoom in/out with scroll wheel
 - [x] Other planets
 - [x] Planets orbiting around Sun
-- [ ] Checkbox to enable planet names
 - [ ] Checkbox to enable orbit lines
-- [ ] Render text
 
 # Planet class
 - [x] render sphere
-- [/] orbit method, which should rotate the planet, and move it on the orbit
-	- [ ] rotate the view?
+- [x] orbit method, which should rotate the planet, and move it on the orbit
 - [/] shaders
-	- [/] read shader from file, vertex and fragment
-		- [ ] currently all planets are black
+	- [x] read shader from file, vertex and fragment
+		- [x] currently all planets are black
 		meaning the shader is loaded wrong
-	- [ ] pass them in somehow?
-	- [ ] change the planet's color
+	- [ ] currently planets aren't correctly sized to screen
+	they get squished, and all render in the center
+	- [ ] each planet should have different shader
 - [x] movement
 	- [x] since the planet is always recreated on display, it never rotates
 	- [x] how to move the element around
