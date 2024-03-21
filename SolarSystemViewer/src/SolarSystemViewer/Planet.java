@@ -22,7 +22,7 @@ public class Planet {
 		this.rotation = rotation;
 		this.moons = moons;
 	}
-
+	
 	// Rotates the planet
 	private void rotate() {
 		rotation += rotationSpeed;

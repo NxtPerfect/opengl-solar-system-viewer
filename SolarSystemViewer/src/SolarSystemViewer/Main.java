@@ -3,6 +3,9 @@ package SolarSystemViewer;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Toolkit;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 
 import javax.swing.JFrame;
 
@@ -24,6 +27,7 @@ public class Main extends JFrame implements GLEventListener {
 	private GLU glu;
 	private GLUT glut;
 	private FPSAnimator animator;
+	private int shaderProgram;
 	Planet sun, earth, mercury, venus;
 
 	// Constructor
@@ -73,15 +77,16 @@ public class Main extends JFrame implements GLEventListener {
 		for (Planet p : new Planet[] { sun, mercury, venus, earth }) {
 			p.render(gl);
 		}
-		venus.debug();
+//		venus.debug();
 
 		canvas.repaint();
 	}
 
 	@Override
-	public void dispose(GLAutoDrawable arg0) {
+	public void dispose(GLAutoDrawable drawable) {
 		// TODO Auto-generated method stub
-
+		GL2 gl = drawable.getGL().getGL2();
+		gl.glDeleteProgram(shaderProgram);
 	}
 
 	@Override
@@ -119,6 +124,21 @@ public class Main extends JFrame implements GLEventListener {
 //
 //		gl.glEnable(GL2.GL_LIGHT0);
 //
+
+		// Load and compile vertex shader
+		int vertexShader = compileShader(gl, GL2.GL_VERTEX_SHADER, "src/SolarSystemViewer/planet.vert");
+		// Load and compile fragment shader
+		int fragmentShader = compileShader(gl, GL2.GL_FRAGMENT_SHADER, "src/SolarSystemViewer/planet.frag");
+
+		// Create shader program
+		shaderProgram = gl.glCreateProgram();
+		gl.glAttachShader(shaderProgram, vertexShader);
+		gl.glAttachShader(shaderProgram, fragmentShader);
+		gl.glLinkProgram(shaderProgram);
+
+		// Cleanup individual shaders
+//		gl.glDeleteShader(vertexShader);
+//		gl.glDeleteShader(fragmentShader);
 		gl.glFlush();
 	}
 
@@ -138,6 +158,24 @@ public class Main extends JFrame implements GLEventListener {
 		gl.glTranslatef(1.0f, 1.0f, -300.0f);
 
 		gl.glMatrixMode(GL2.GL_MODELVIEW);
+	}
+
+	private int compileShader(GL2 gl, int type, String filename) {
+		int shader = gl.glCreateShader(type);
+		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+			StringBuilder shaderSource = new StringBuilder();
+			String line = "";
+			while ((line = br.readLine()) != null) {
+				shaderSource.append(line).append("\n");
+			}
+			br.close();
+			gl.glShaderSource(shader, 1, new String[] { shaderSource.toString() }, null);
+			gl.glCompileShader(shader);
+			return shader;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return 0;
+		}
 	}
 
 	private class Planet {
@@ -180,6 +218,23 @@ public class Main extends JFrame implements GLEventListener {
 			this.y = Math.sin(radiansRotation) * distanceFromSun;
 		}
 
+		private int compileShader(GL2 gl, int type, String filename) {
+			int shader = gl.glCreateShader(type);
+			try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+				StringBuilder shaderSource = new StringBuilder();
+				String line;
+				while ((line = br.readLine()) != null) {
+					shaderSource.append(line).append("\n");
+				}
+				gl.glShaderSource(shader, 1, new String[] { shaderSource.toString() }, null);
+				gl.glCompileShader(shader);
+				return shader;
+			} catch (IOException e) {
+				e.printStackTrace();
+				return 0;
+			}
+		}
+
 		public void render(GL2 gl) {
 			gl.glPushMatrix();
 			gl.glTranslated(x, y, 0);
@@ -194,11 +249,15 @@ public class Main extends JFrame implements GLEventListener {
 			if (this.name == "Mercury") {
 				gl.glColor3f(0.0f, 1.0f, 1.0f);
 			}
+			gl.glUseProgram(shaderProgram);
 			glu.gluSphere(quad, (double) this.radius, 25, 25);
-			
+
+			// TODO: here i should add render of moons
+
 			glu.gluDeleteQuadric(quad);
 			rotate();
 			orbit();
+			gl.glUseProgram(0);
 			gl.glPopMatrix();
 		}
 
